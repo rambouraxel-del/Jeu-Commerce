@@ -15,9 +15,9 @@ export function FinancesPanel() {
   const c = useController();
   const s = c.engine.state;
   const t = s.today;
-  const live = s.phase === 'running' || s.phase === 'closing' || s.phase === 'prep';
-  // Journée affichée : en cours, ou dernier bilan après fermeture.
-  const cur: DayRecord = live ? t : s.history[s.history.length - 1] ?? t;
+  // Journée affichée : en cours, sinon le dernier jour clôturé (avant l'ouverture et après la fermeture).
+  const live = s.phase === 'running' || s.phase === 'closing' || s.history.length === 0;
+  const cur: DayRecord = live ? t : s.history[s.history.length - 1];
   const prev = live ? s.history[s.history.length - 1] : s.history[s.history.length - 2];
   const ch = dailyCharges(s, cur.revenue);
   const projectedProfit = live ? cur.revenue - cur.cogs - cur.marketing - ch.total : cur.profit;
@@ -35,8 +35,8 @@ export function FinancesPanel() {
   const ruptures = live ? Object.keys(s.products).filter((id) => s.products[id].stockoutsToday > 0).length : cur.stockoutProducts.length;
 
   const kpis = [
-    { label: live ? 'CA aujourd’hui' : 'CA (dernier jour)', value: compactEuros(cur.revenue), cur: cur.revenue, prev: prev?.revenue },
-    { label: live ? 'Profit estimé' : 'Profit', value: compactEuros(projectedProfit), cur: projectedProfit, prev: prev?.profit, neg: projectedProfit < 0 },
+    { label: live ? 'CA aujourd’hui' : `CA jour ${cur.day}`, value: compactEuros(cur.revenue), cur: cur.revenue, prev: prev?.revenue },
+    { label: live ? 'Profit estimé' : `Profit jour ${cur.day}`, value: compactEuros(projectedProfit), cur: projectedProfit, prev: prev?.profit, neg: projectedProfit < 0 },
     { label: 'Clients', value: String(cur.customers), cur: cur.customers, prev: prev?.customers },
     { label: 'Conversion', value: pct(conv), cur: conv, prev: prevConv },
     { label: 'Panier moyen', value: euros(basket), cur: basket, prev: prevBasket },

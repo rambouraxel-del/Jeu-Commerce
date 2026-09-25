@@ -2,6 +2,7 @@ import { PRODUCT_MAP } from '../../data/products';
 import { STORE_LEVELS } from '../../data/store';
 import { dateInfo } from '../../game/calendar/calendar';
 import type { DayRecord } from '../../game/types';
+import { deleteSave } from '../../save/save';
 import { euros, pct } from '../../utils/format';
 import { Modal, Trend } from '../components/common';
 import { useController } from '../hooks';
@@ -229,10 +230,11 @@ export function GameOverModal() {
         className="btn primary wide"
         onClick={() => {
           c.noSave = true;
+          deleteSave();
           c.onExit?.();
         }}
       >
-        Retour au menu
+        Nouvelle partie
       </button>
     </Modal>
   );

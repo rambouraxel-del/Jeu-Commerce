@@ -55,6 +55,7 @@ export class GameController {
   lastDayRecord: DayRecord | null = null;
   onExit: (() => void) | null = null;
   noSave = false;
+  objectivesOpen = false;
 
   private listeners = new Set<() => void>();
   private raf = 0;
@@ -124,7 +125,10 @@ export class GameController {
 
   private applyInsets(): void {
     if (!this.renderer) return;
-    this.renderer.insets = { top: this.baseInsets.top + (this.coachHeight ? this.coachHeight + 8 : 0), bottom: this.baseInsets.bottom };
+    // Sur petit écran, la carte tutoriel/objectifs est au-dessus du magasin : on lui réserve sa hauteur.
+    const narrow = this.renderer.width < 700;
+    const coach = narrow && this.coachHeight ? this.coachHeight + 8 : 0;
+    this.renderer.insets = { top: this.baseInsets.top + coach, bottom: this.baseInsets.bottom };
     if (!this.renderer.userCamera) this.renderer.fit(this.engine.state.storeLevel);
   }
 

@@ -57,7 +57,7 @@ function bestSupplierFor(engine: GameEngine, productId: string, sourcing: BotStr
     let score: number;
     if (sourcing === 'cheap') score = -cost;
     else if (sourcing === 'premium') score = q * 10 - cost / market;
-    else score = (market - cost) / market * 100 + q * 0.8 - (sup.delayDays > 1 ? 5 : 0);
+    else score = (market - cost) / market * 100 + q * 0.6 - (sup.delayDays > 1 ? 5 : 0);
     if (score > bestScore) {
       bestScore = score;
       best = sup.id;

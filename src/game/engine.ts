@@ -368,15 +368,16 @@ export class GameEngine {
     const sat = this.satisfactionCount ? this.satisfactionSum / this.satisfactionCount : s.reputation;
     t.satisfaction = sat;
 
-    // Réputation : dérive lente vers la satisfaction moyenne.
-    let delta = (sat - s.reputation) * BALANCE.reputationDriftRate * Math.min(1, t.customers / 25);
+    // Réputation : dérive lente vers la satisfaction moyenne, pondérée par la qualité perçue de l'offre.
+    const target = sat * 0.8 + this.qualityIndex() * 0.2;
+    let delta = (target - s.reputation) * BALANCE.reputationDriftRate * Math.min(1, t.customers / 25);
     if (delta < 0 && s.upgrades.includes('loyalty')) delta *= 0.7;
     delta = Math.max(-BALANCE.reputationMaxDailyChange, Math.min(BALANCE.reputationMaxDailyChange, delta));
     // Le marketing aide la réputation, mais ne peut pas la porter bien au-delà de la satisfaction réelle.
     let bonus = 0;
     for (const c of s.campaigns) bonus += CAMPAIGN_MAP[c.id]?.repPerDay ?? 0;
     if (s.upgrades.includes('app')) bonus += 0.05;
-    delta += bonus * Math.max(0, 1 - Math.max(0, s.reputation - sat) / 8);
+    delta += bonus * Math.max(0, 1 - Math.max(0, s.reputation - target) / 8);
     s.reputation = Math.max(0, Math.min(100, s.reputation + delta));
     t.repEnd = s.reputation;
 

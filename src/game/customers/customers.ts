@@ -260,7 +260,7 @@ export function considerProduct(engine: GameEngine, c: Customer, f: PlacedFurnit
     c.satisfaction += 0.8;
   }
   // La qualité pèse sur la satisfaction de façon continue.
-  c.satisfaction += ((ps.avgQuality - BALANCE.qualityPivot) / 100) * 6 * c.qualitySensitivity;
+  c.satisfaction += ((ps.avgQuality - BALANCE.qualityPivot) / 100) * 10 * c.qualitySensitivity;
   if (ps.avgQuality >= 80) {
     c.satisfaction += 0.5 * c.qualitySensitivity;
     if (!reaction && rng.chance(0.08)) reaction = { text: "J'adore ce produit !", mood: 'good' };
@@ -288,7 +288,8 @@ export function recordSale(engine: GameEngine, productId: string, qty: number, p
   s.totalRevenue += amount;
   ps.soldToday += qty;
   ps.soldTotal += qty;
-  ps.popularity = Math.min(1.6, ps.popularity + BALANCE.popularityGain * qty);
+  // un bon produit fidélise (popularité), un produit médiocre beaucoup moins
+  ps.popularity = Math.min(1.6, ps.popularity + BALANCE.popularityGain * qty * (ps.avgQuality / 60));
   s.lifetime.itemsSold += qty;
   s.lifetime.categorySales[def.category] = (s.lifetime.categorySales[def.category] ?? 0) + qty;
   engine.addMarginXp(amount - cost);

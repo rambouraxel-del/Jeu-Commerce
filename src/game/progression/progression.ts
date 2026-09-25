@@ -8,6 +8,7 @@ import { SUPPLIERS } from '../../data/suppliers';
 import { euros } from '../../utils/format';
 import { BALANCE, xpForLevel } from '../constants';
 import type { GameEngine } from '../engine';
+import { findFreeSpot } from '../store/layout';
 import { distinctInStock } from '../store/stock';
 import type { CategoryId, GameState, Objective, ObjectiveKind } from '../types';
 
@@ -197,6 +198,7 @@ export function makeObjective(engine: GameEngine, kind: ObjectiveKind): Objectiv
       target = Math.min(distinctInStock(s) + rng.int(2, 4), 80);
       break;
     case 'runCampaign':
+      param = String(s.lifetime.campaigns);
       break;
     case 'placeDeco': {
       const decos = s.furniture.filter((f) => !f.slots.length).length;
@@ -257,6 +259,9 @@ export function refillObjectives(engine: GameEngine): void {
     const kind = engine.rng.pick(pool);
     if (s.objectives.some((o) => o.kind === kind)) continue;
     if (kind === 'reachReputation' && s.reputation >= 92) continue;
+    // pas d'objectif d'installation si le magasin est plein
+    if (kind === 'placeShelves' && !findFreeSpot(s.storeLevel, s.furniture, 'etagere')) continue;
+    if (kind === 'placeDeco' && !findFreeSpot(s.storeLevel, s.furniture, 'plante')) continue;
     s.objectives.push(makeObjective(engine, kind));
   }
 }
@@ -299,7 +304,7 @@ export function updateObjectivesLive(engine: GameEngine): void {
         o.progress = s.furniture.filter((f) => f.slots.length).length;
         break;
       case 'runCampaign':
-        o.progress = s.campaigns.length > 0 ? 1 : o.progress;
+        o.progress = s.lifetime.campaigns > Number(o.param ?? 0) ? 1 : 0;
         o.target = 1;
         break;
       default:

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FURNITURE, FURNITURE_MAP } from '../../data/furniture';
 import { TUTORIAL_STEPS } from '../../game/engine';
-import { reserveCapacity, reserveUsed } from '../../game/store/stock';
+import { reserveCapacity, reserveUsed, shelfCapacity } from '../../game/store/stock';
 import { compactEuros, euros } from '../../utils/format';
 import { useController } from '../hooks';
 import { Progress } from './common';
@@ -18,8 +18,13 @@ export function StoreOverlay() {
   const arrived = s.orders.filter((o) => o.status === 'arrived').length;
   const avatarBusy = c.engine.avatar.task.type !== 'idle' || c.engine.pickupQueue.length > 0;
   const used = reserveUsed(s);
+  const homeless = Object.keys(s.products).filter((id) => s.products[id].reserve > 0 && shelfCapacity(s, id) === 0).length;
   const cap = reserveCapacity(s);
-  const [objOpen, setObjOpen] = useState(true);
+  const objOpen = c.objectivesOpen;
+  const setObjOpen = (v: boolean) => {
+    c.objectivesOpen = v;
+    c.bump();
+  };
   const objectives = s.objectives.filter((o) => !o.done);
   const coachRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -53,7 +58,9 @@ export function StoreOverlay() {
         ) : (
           objectives.length > 0 && (
             <div className="coach-card" onClick={() => setObjOpen(!objOpen)}>
-              <div className="coach-step">🎯 Objectifs {objOpen ? '▾' : '▸'}</div>
+              <div className="coach-step">
+                🎯 Objectifs ({objectives.length}) {objOpen ? '▾' : '▸ toucher pour voir'}
+              </div>
               {objOpen &&
                 objectives.slice(0, 3).map((o) => (
                   <div key={o.id} className="obj-mini">
@@ -98,6 +105,11 @@ export function StoreOverlay() {
         {arrived > 0 && (
           <button className={`pill truck ${target === 'truck' ? 'pulse' : ''}`} onClick={() => c.pickup()} disabled={avatarBusy} data-testid="btn-pickup">
             🚚 {avatarBusy ? 'Réception en cours…' : `Récupérer la livraison${arrived > 1 ? ` (${arrived})` : ''}`}
+          </button>
+        )}
+        {homeless > 0 && (
+          <button className="pill warn" onClick={() => c.setTab('stock')}>
+            📦 {homeless} produit{homeless > 1 ? 's' : ''} en réserve sans rayon — installez ou libérez un emplacement
           </button>
         )}
         {used > cap && (

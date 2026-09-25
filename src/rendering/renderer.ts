@@ -488,7 +488,32 @@ export class Renderer {
         ctx.fill();
       }
     }
-    // horloge murale / enseigne intérieure
+    // équipements visibles au mur
+    if (s.upgrades.includes('aircon')) {
+      for (const ax of [0.4, g.w - 1.6]) {
+        ctx.fillStyle = '#f8f9fa';
+        roundRect(ctx, ax, -1.0, 1.2, 0.38, 0.06);
+        ctx.fill();
+        ctx.fillStyle = '#adb5bd';
+        for (let i = 0; i < 4; i++) ctx.fillRect(ax + 0.1, -0.8 + i * 0.04, 1.0, 0.015);
+      }
+    }
+    if (s.upgrades.includes('music')) {
+      for (const sx of [g.w * 0.25, g.w * 0.75]) {
+        ctx.fillStyle = '#343a40';
+        roundRect(ctx, sx - 0.15, -0.5, 0.3, 0.4, 0.05);
+        ctx.fill();
+        ctx.fillStyle = '#6c757d';
+        ctx.beginPath();
+        ctx.arc(sx, -0.3, 0.09, 0, Math.PI * 2);
+        ctx.fill();
+        if (engine.isOpen()) this.worldText('♪', sx + 0.3 + Math.sin(this.time * 2) * 0.1, -0.7 - ((this.time * 0.6) % 0.4), 0.25, '#495057', 'center', true);
+      }
+    }
+    if (s.upgrades.includes('loyalty') || s.upgrades.includes('app')) {
+      this.worldText(s.upgrades.includes('app') ? '📲 Appli & carte fidélité' : '🎟️ Carte fidélité', g.w - 0.3, -0.2, 0.16, '#495057', 'right', true);
+    }
+    // enseigne intérieure
     this.worldText(s.customization.storeName.toUpperCase(), g.w / 2, -0.55, 0.36, '#ffffff', 'center', true, s.customization.mainColor);
   }
 
@@ -660,6 +685,10 @@ export class Renderer {
         ctx.fillRect(x + 0.05, y + 0.05, fp.w - 0.1, fp.h - H - 0.3);
       }
       this.drawSlotItems(engine, f, x + 0.14, top + 0.34, fp.w - 0.28, H - 0.16, false);
+      if (s.upgrades.includes('premium_shelves')) {
+        ctx.fillStyle = '#d4af37';
+        ctx.fillRect(x + 0.05, top + 0.22, fp.w - 0.1, 0.05);
+      }
       if (isFridge || isVitrine) {
         ctx.fillStyle = isVitrine ? 'rgba(180,220,255,0.18)' : 'rgba(255,255,255,0.28)';
         ctx.fillRect(x + 0.12, top + 0.32, fp.w - 0.24, H - 0.12);
@@ -1034,6 +1063,7 @@ export class Renderer {
     ctx.font = `600 ${px}px system-ui, sans-serif`;
     const w = ctx.measureText(text).width + px;
     const h = px * 1.7;
+    p.x = Math.max(w / 2 + 4, Math.min(this.width - w / 2 - 4, p.x));
     ctx.fillStyle = mood === 'good' ? '#e9fbe9' : mood === 'bad' ? '#ffe8e8' : '#ffffff';
     ctx.strokeStyle = mood === 'good' ? '#2b9348' : mood === 'bad' ? '#d00000' : '#888';
     ctx.lineWidth = 1.5;

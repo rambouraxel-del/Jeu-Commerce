@@ -22,7 +22,7 @@ describe('réputation', () => {
       const r = e.state.reputation;
       expect(r).toBeGreaterThanOrEqual(0);
       expect(r).toBeLessThanOrEqual(100);
-      expect(Math.abs(r - prev)).toBeLessThan(4); // lente à construire
+      expect(Math.abs(r - prev)).toBeLessThan(6); // lente à construire (dérive ≤ 2,5/j + bonus ponctuels)
       prev = r;
     }
   });

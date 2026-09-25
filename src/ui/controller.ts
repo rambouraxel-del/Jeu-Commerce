@@ -107,9 +107,25 @@ export class GameController {
     this.raf = requestAnimationFrame(loop);
   }
 
+  private baseInsets = { top: 70, bottom: 130 };
+  private coachHeight = 0;
+
   setInsets(top: number, bottom: number): void {
+    this.baseInsets = { top, bottom };
+    this.applyInsets();
+  }
+
+  /** Hauteur de la carte tutoriel/objectifs : la caméra lui réserve de la place. */
+  setCoachHeight(h: number): void {
+    if (Math.abs(h - this.coachHeight) < 2) return;
+    this.coachHeight = h;
+    this.applyInsets();
+  }
+
+  private applyInsets(): void {
     if (!this.renderer) return;
-    this.renderer.insets = { top, bottom };
+    this.renderer.insets = { top: this.baseInsets.top + (this.coachHeight ? this.coachHeight + 8 : 0), bottom: this.baseInsets.bottom };
+    if (!this.renderer.userCamera) this.renderer.fit(this.engine.state.storeLevel);
   }
 
   resize(): void {
@@ -119,7 +135,9 @@ export class GameController {
   }
 
   recenter(): void {
-    this.renderer?.fit(this.engine.state.storeLevel);
+    if (!this.renderer) return;
+    this.renderer.userCamera = false;
+    this.renderer.fit(this.engine.state.storeLevel);
   }
 
   destroy(): void {
@@ -185,7 +203,7 @@ export class GameController {
 
   toast(text: string, kind: Toast['kind'] = 'info', ttl = 3): void {
     this.toasts.push({ id: this.toastId++, text, kind, ttl });
-    if (this.toasts.length > 4) this.toasts.shift();
+    if (this.toasts.length > 3) this.toasts.shift();
     this.bump();
   }
 

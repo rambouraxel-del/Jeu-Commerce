@@ -44,7 +44,7 @@ export function geometry(level: number): StoreGeometry {
     avatarHome: { x: checkouts[0].x + 1, y: h - 1 },
     desk: { x: w - 1, y: h - 1 },
     serviceDoor: { x: w - 1, y: h - 2 },
-    truckSpot: { x: w + 1.72, y: h - 2.9 },
+    truckSpot: { x: w - 1.7, y: h + 2.4 },
   };
 }
 

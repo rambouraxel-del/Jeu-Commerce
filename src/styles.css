@@ -506,9 +506,10 @@ h3 {
 /* ---------------------------------------------------------------- Overlay magasin */
 .coach {
   position: absolute;
-  top: calc(var(--hud-h) + 8px);
+  top: calc(var(--hud-h) + 6px);
   left: calc(var(--sal) + 8px);
   right: 76px;
+  align-items: flex-start;
   z-index: 10;
   pointer-events: none;
   display: flex;
@@ -517,10 +518,10 @@ h3 {
   pointer-events: auto;
   background: rgba(255, 255, 255, 0.95);
   border-radius: var(--radius);
-  padding: 8px 12px;
+  padding: 6px 10px;
   box-shadow: var(--shadow);
-  max-width: 340px;
-  font-size: 0.85rem;
+  max-width: 360px;
+  font-size: 0.8rem;
 }
 .coach-card.tuto {
   border: 2px solid var(--yellow);

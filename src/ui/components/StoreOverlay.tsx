@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FURNITURE, FURNITURE_MAP } from '../../data/furniture';
 import { TUTORIAL_STEPS } from '../../game/engine';
 import { reserveCapacity, reserveUsed } from '../../game/store/stock';
@@ -21,11 +21,24 @@ export function StoreOverlay() {
   const cap = reserveCapacity(s);
   const [objOpen, setObjOpen] = useState(true);
   const objectives = s.objectives.filter((o) => !o.done);
+  const coachRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = coachRef.current;
+    if (!el) return;
+    const update = () => c.setCoachHeight(el.getBoundingClientRect().height);
+    update();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+    ro?.observe(el);
+    return () => {
+      ro?.disconnect();
+      c.setCoachHeight(0);
+    };
+  }, [c]);
 
   return (
     <>
       {/* Coach tutoriel ou objectifs */}
-      <div className="coach">
+      <div className="coach" ref={coachRef}>
         {t.active && !t.done ? (
           <div className="coach-card tuto">
             <div className="coach-step">

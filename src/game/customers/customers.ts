@@ -230,11 +230,11 @@ export function considerProduct(engine: GameEngine, c: Customer, f: PlacedFurnit
   if (!rng.chance(p)) {
     if (impulse) return null;
     if (rawRatio > BALANCE.abusiveRatio) {
-      c.satisfaction -= 9;
+      c.satisfaction -= 15;
       return rng.chance(0.5) ? { text: 'Prix abusif !', mood: 'bad' } : null;
     }
     if (r > 1.12) {
-      c.satisfaction -= 2 + 8 * (r - 1);
+      c.satisfaction -= 2 + 14 * (r - 1);
       return rng.chance(0.35) ? { text: 'Trop cher', mood: 'bad' } : null;
     }
     return null;
@@ -306,6 +306,7 @@ export function finalizeSatisfaction(engine: GameEngine, c: Customer): number {
   sat -= c.missedWants * 3;
   if (c.waited > BALANCE.queuePatience) sat -= (c.waited - BALANCE.queuePatience) * 0.8;
   if (c.items.length === 0 && c.stockouts === 0 && c.wants.length === 0) sat -= 6; // rien trouvé d'intéressant
+  if (c.items.length === 0 && c.wants.length > 0) sat -= 8; // visite déçue : reparti les mains vides
   // variété
   const def = levelDef(s.storeLevel);
   sat += Math.min(4, (engine.distinctCache / def.expectedVariety) * 4) - 2;

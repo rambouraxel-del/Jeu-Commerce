@@ -80,6 +80,8 @@ export class Renderer {
   private fittedLevel = 0;
   private flashScreen = 0;
   insets = { top: 0, bottom: 0 };
+  /** Le joueur a déplacé/zoomé la vue : on ne recadre plus automatiquement. */
+  userCamera = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -98,7 +100,7 @@ export class Renderer {
   /** Bornes du monde affiché (magasin + abords). */
   worldBounds(level: number): { x0: number; y0: number; x1: number; y1: number } {
     const g = geometry(level);
-    return { x0: -0.5, y0: -1.5, x1: g.w + 3.1, y1: g.h + 1.6 };
+    return { x0: -0.8, y0: -1.5, x1: g.w + 0.8, y1: g.h + 3.2 };
   }
 
   fit(level: number): void {
@@ -118,6 +120,7 @@ export class Renderer {
   }
 
   zoomAt(px: number, py: number, factor: number, level: number): void {
+    this.userCamera = true;
     const ns = Math.max(this.minScale(level), Math.min(110, this.scale * factor));
     const wx = (px - this.ox) / this.scale;
     const wy = (py - this.oy) / this.scale;
@@ -128,6 +131,7 @@ export class Renderer {
   }
 
   pan(dx: number, dy: number, level: number): void {
+    this.userCamera = true;
     this.ox += dx;
     this.oy += dy;
     this.clampCamera(level);
@@ -190,6 +194,7 @@ export class Renderer {
         if (e.type === 'expansion') {
           this.flashScreen = 1;
           this.fittedLevel = 0;
+          this.userCamera = false;
         }
         break;
       default:
@@ -232,7 +237,7 @@ export class Renderer {
     // camion
     if (!build && s.orders.some((o) => o.status === 'arrived')) {
       const t = g.truckSpot;
-      if (x > t.x - 1.1 && x < t.x + 1.1 && y > t.y - 1.4 && y < t.y + 2.2) return { type: 'truck' };
+      if (x > t.x - 1.9 && x < t.x + 1.4 && y > t.y - 1.6 && y < t.y + 0.8) return { type: 'truck' };
     }
     // bureau
     if (Math.floor(x) === g.desk.x && y > g.desk.y - 0.8 && y < g.desk.y + 1) return { type: 'desk' };
@@ -311,11 +316,11 @@ export class Renderer {
           carrying: a.task.type === 'carrying' || a.task.type === 'opening',
         }),
     });
+    list.push({ y: g.h + 0.3, draw: () => this.drawFrontWall(engine) });
+    list.push({ y: g.truckSpot.y + 0.5, draw: () => this.drawTruck(engine) });
     list.sort((p, q) => p.y - q.y);
     for (const d of list) d.draw();
 
-    this.drawFrontWall(engine);
-    this.drawTruck(engine);
     if (build.ghost) this.drawGhost(engine, build.ghost);
     this.drawEffects(engine, dt);
     this.drawNight(engine);
@@ -344,15 +349,14 @@ export class Renderer {
     ctx.fillStyle = '#f1f1f1';
     for (let x = Math.floor(b.x0 - pad); x < b.x1 + pad; x += 2) ctx.fillRect(x, g.h + 3.05, 1, 0.08);
 
-    // zone de livraison (à droite)
-    ctx.fillStyle = '#6c7078';
-    ctx.fillRect(g.w + 0.25, g.h - 5.2, 2.95, 5.45);
+    // aire de livraison (devant le magasin, côté droit)
+    const t = g.truckSpot;
     ctx.strokeStyle = '#ffd166';
     ctx.lineWidth = 0.06;
     ctx.setLineDash([0.25, 0.18]);
-    ctx.strokeRect(g.w + 0.45, g.h - 4.9, 2.55, 4.9);
+    ctx.strokeRect(t.x - 1.55, t.y - 0.62, 3.0, 1.25);
     ctx.setLineDash([]);
-    this.worldText('LIVRAISONS', g.w + 1.72, g.h - 5.0, 0.24, '#ffd166', 'center', true);
+    this.worldText('LIVRAISON', t.x, t.y + 0.85, 0.22, '#ffd166', 'center', true);
 
     // arbres décoratifs à gauche
     const trees = Math.max(2, Math.floor(g.h / 3));
@@ -361,11 +365,11 @@ export class Renderer {
       this.drawTree(-0.7, ty + 0.6, 0.45 + (i % 2) * 0.1);
     }
     // parking pour les grands magasins
-    if (s.storeLevel >= 4) {
+    if (s.storeLevel >= 3) {
       const cars = ['#e63946', '#457b9d', '#f1faee', '#2a9d8f', '#ffb703'];
-      for (let i = 0; i < Math.min(8, s.storeLevel * 2 - 4); i++) {
-        const cx = 0.3 + i * 1.6;
-        if (cx > g.w + 3) break;
+      for (let i = 0; i < Math.min(8, s.storeLevel * 2 - 3); i++) {
+        const cx = 0.2 + i * 1.6;
+        if (cx + 1.1 > g.doorX - 0.6) break;
         ctx.fillStyle = cars[i % cars.length];
         roundRect(ctx, cx, g.h + 2.2, 1.1, 0.6, 0.15);
         ctx.fill();
@@ -537,9 +541,6 @@ export class Renderer {
       const p = s.promotions.find((x) => x.scope === 'store')!;
       this.worldText(`PROMO −${Math.round(p.discount * 100)} %`, g.doorX - 2.2, g.h + 1.25, 0.2, '#fff', 'center', true, '#e63946');
     }
-    // porte de service
-    ctx.fillStyle = '#6d597a';
-    ctx.fillRect(g.w, g.h - 2, 0.25, 1);
   }
 
   private drawBuildGrid(engine: GameEngine, build: BuildView): void {
@@ -743,6 +744,9 @@ export class Renderer {
           const ih = rh * (prod.shape === 'bottle' ? 0.8 : prod.shape === 'can' ? 0.55 : 0.68);
           ctx.fillStyle = prod.color;
           ctx.fillRect(ix + iw * 0.08, sy + rh - ih - 0.02, iw * 0.84, ih);
+          ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+          ctx.lineWidth = 0.012;
+          ctx.strokeRect(ix + iw * 0.08, sy + rh - ih - 0.02, iw * 0.84, ih);
           ctx.fillStyle = 'rgba(0,0,0,0.18)';
           ctx.fillRect(ix + iw * 0.08, sy + rh - 0.05, iw * 0.84, 0.03);
           ctx.fillStyle = 'rgba(255,255,255,0.35)';
@@ -929,38 +933,51 @@ export class Renderer {
     const t0 = this.truckArrive.get(o.id);
     const p = t0 === undefined ? 1 : Math.min(1, (this.time - t0) / 1.2);
     const ease = 1 - Math.pow(1 - p, 3);
-    const tx = g.truckSpot.x;
-    const ty = g.truckSpot.y + (1 - ease) * 6;
-    drawShadow(ctx, tx, ty + 1.6, 0.9, 0.2);
+    const tx = g.truckSpot.x + (1 - ease) * 9;
+    const ty = g.truckSpot.y;
+    drawShadow(ctx, tx, ty + 0.55, 1.45, 0.18);
+    // roues
+    ctx.fillStyle = '#222';
+    for (const wx of [tx - 0.95, tx - 0.5, tx + 0.95]) {
+      ctx.beginPath();
+      ctx.arc(wx, ty + 0.45, 0.17, 0, Math.PI * 2);
+      ctx.fill();
+    }
     // caisse du camion
     ctx.fillStyle = '#f8f9fa';
-    roundRect(ctx, tx - 0.8, ty - 1.2, 1.6, 2.1, 0.1);
+    roundRect(ctx, tx - 1.4, ty - 1.0, 1.9, 1.4, 0.08);
     ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 0.03;
+    ctx.stroke();
     ctx.fillStyle = sup.truckColor;
-    ctx.fillRect(tx - 0.8, ty - 0.2, 1.6, 0.35);
-    this.worldText(sup.name.split(' ')[0], tx, ty - 0.03, 0.2, '#fff', 'center', true);
+    ctx.fillRect(tx - 1.4, ty - 0.45, 1.9, 0.32);
+    this.worldText(sup.name.split(' ')[0], tx - 0.45, ty - 0.29, 0.2, '#fff', 'center', true);
     // cabine
     ctx.fillStyle = sup.truckColor;
-    roundRect(ctx, tx - 0.75, ty + 0.85, 1.5, 0.75, 0.15);
+    roundRect(ctx, tx + 0.52, ty - 0.62, 0.85, 1.02, 0.14);
     ctx.fill();
-    ctx.fillStyle = 'rgba(180,220,255,0.9)';
-    ctx.fillRect(tx - 0.6, ty + 1.05, 1.2, 0.3);
-    // cartons
-    const boxes = Math.min(4, o.lines.length);
+    ctx.fillStyle = 'rgba(180,220,255,0.95)';
+    roundRect(ctx, tx + 0.95, ty - 0.52, 0.35, 0.45, 0.06);
+    ctx.fill();
+    // cartons déposés à l'arrière
+    const boxes = Math.min(3, o.lines.length);
     for (let i = 0; i < boxes; i++) {
+      const bx = tx - 1.95 + (i % 2) * 0.12;
+      const by = ty + 0.25 - i * 0.32;
       ctx.fillStyle = '#c69c6d';
-      ctx.fillRect(tx - 0.6 + (i % 2) * 0.62, ty - 1.05 + Math.floor(i / 2) * 0.5, 0.55, 0.42);
+      ctx.fillRect(bx, by - 0.3, 0.45, 0.32);
       ctx.strokeStyle = '#8a6a44';
       ctx.lineWidth = 0.02;
-      ctx.strokeRect(tx - 0.6 + (i % 2) * 0.62, ty - 1.05 + Math.floor(i / 2) * 0.5, 0.55, 0.42);
+      ctx.strokeRect(bx, by - 0.3, 0.45, 0.32);
     }
     if (p >= 1 && engine.avatar.task.type === 'idle') {
       const b = Math.sin(this.time * 5) * 0.1;
       ctx.fillStyle = '#ff006e';
       ctx.beginPath();
-      ctx.arc(tx, ty - 1.6 + b, 0.28, 0, Math.PI * 2);
+      ctx.arc(tx - 0.45, ty - 1.4 + b, 0.28, 0, Math.PI * 2);
       ctx.fill();
-      this.worldText(arrived.length > 1 ? `×${arrived.length}` : '!', tx, ty - 1.6 + b, 0.3, '#fff', 'center', true);
+      this.worldText(arrived.length > 1 ? `×${arrived.length}` : '!', tx - 0.45, ty - 1.4 + b, 0.3, '#fff', 'center', true);
     }
   }
 

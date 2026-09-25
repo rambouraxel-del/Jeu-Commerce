@@ -43,6 +43,9 @@ function GameUI() {
     const measure = () => {
       const top = hudRef.current?.getBoundingClientRect().height ?? 70;
       const bottom = navRef.current?.getBoundingClientRect().height ?? 64;
+      // hauteurs réelles (safe areas incluses) pour placer panneaux et boutons
+      document.documentElement.style.setProperty('--hud-h', `${top}px`);
+      document.documentElement.style.setProperty('--nav-h', `${bottom}px`);
       c.setInsets(top + 8, bottom + 70);
       c.resize();
     };

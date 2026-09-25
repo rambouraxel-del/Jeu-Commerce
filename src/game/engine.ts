@@ -778,8 +778,10 @@ export class GameEngine {
     const speed = 3.4 * dtSeconds;
     const home = { x: geo.avatarHome.x + 0.5, y: geo.avatarHome.y + 0.5 };
     const aisle = geo.h - 1.5;
-    const inside = { x: geo.w - 0.5, y: aisle };
-    const truck = { x: geo.truckSpot.x - 0.95, y: geo.truckSpot.y + 0.1 };
+    const doorX = geo.doorX + 0.5;
+    const inside = { x: Math.min(geo.w - 0.5, doorX + 1), y: aisle };
+    const outside = { x: doorX, y: geo.h + 0.9 };
+    const truck = { x: geo.truckSpot.x - 1.6, y: geo.truckSpot.y - 0.35 };
     const t = a.task;
     switch (t.type) {
       case 'idle': {
@@ -790,7 +792,7 @@ export class GameEngine {
             a.task = { type: 'toTruck', orderId: next };
             a.path = [];
             if (Math.abs(a.y - aisle) > 0.1) a.path.push({ x: a.x, y: aisle });
-            a.path.push(inside, { x: geo.w + 0.6, y: aisle }, truck);
+            a.path.push({ x: doorX, y: aisle }, outside, truck);
           }
         } else if (Math.hypot(a.x - home.x, a.y - home.y) > 0.05 && !a.path.length) {
           a.path = [{ x: home.x, y: aisle }, home];
@@ -801,7 +803,7 @@ export class GameEngine {
       case 'toTruck':
         if (this.moveAlong(a, speed)) {
           a.task = { type: 'carrying', orderId: t.orderId };
-          a.path = [{ x: geo.w + 0.6, y: aisle }, inside];
+          a.path = [outside, { x: doorX, y: aisle }, inside];
           this.touch();
         }
         break;
@@ -819,7 +821,7 @@ export class GameEngine {
           const o = next !== undefined ? this.state.orders.find((x) => x.id === next) : undefined;
           if (o && o.status === 'arrived') {
             a.task = { type: 'toTruck', orderId: o.id };
-            a.path = [{ x: geo.w + 0.6, y: aisle }, truck];
+            a.path = [{ x: doorX, y: aisle }, outside, truck];
           } else {
             a.task = { type: 'return' };
             a.path = [{ x: home.x, y: aisle }, home];

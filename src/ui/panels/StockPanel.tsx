@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CATEGORY_MAP } from '../../data/categories';
-import { PRODUCTS, PRODUCT_MAP } from '../../data/products';
+import { PRODUCTS } from '../../data/products';
 import { SUPPLIER_MAP } from '../../data/suppliers';
 import { marginRate } from '../../game/economy/pricing';
 import { effectivePrice, productDiscount } from '../../game/marketing/marketing';
@@ -150,7 +150,9 @@ export function StockPanel() {
                 <span className={r.margin < 0.15 ? 'neg' : ''}>
                   Marge <b>{pct(r.margin)}</b>
                 </span>
-                <span>Qualité {Math.round(r.ps.avgQuality)}</span>
+                <span>
+                  Auj. <b>{r.ps.soldToday}</b> · Q {Math.round(r.ps.avgQuality)}
+                </span>
                 <span className="ellipsis">{r.ps.lastSupplier ? SUPPLIER_MAP[r.ps.lastSupplier].name : '—'}</span>
               </div>
             </button>
@@ -160,8 +162,4 @@ export function StockPanel() {
       <p className="hint">Touchez un produit pour modifier son prix, lancer une promotion ou le commander.</p>
     </div>
   );
-}
-
-export function productRowInfo(pid: string) {
-  return PRODUCT_MAP[pid];
 }

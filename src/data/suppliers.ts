@@ -23,7 +23,7 @@ export const SUPPLIERS: SupplierDef[] = [
     description: 'Prix cassés, qualité médiocre. Livré le lendemain matin. Commande min. 40 €.',
     icon: '🏷️',
     categories: ['epicerie', 'frais', 'boissons', 'boulangerie', 'entretien', 'hygiene', 'papeterie', 'maison', 'loisirs'],
-    priceFactor: 0.8,
+    priceFactor: 0.82,
     quality: 30,
     delayMinutes: 0,
     delayDays: 1,
